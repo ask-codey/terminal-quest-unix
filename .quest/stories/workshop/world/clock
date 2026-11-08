@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+exec bash "${QUEST_HOME:?Play this inside a quest: ./quest start workshop}/.quest/lib/object.sh" 'workshop' 'clock' "$@"
+# The workshop clock.
+# Options: --wind  wind it up
+#          --twice  do it twice (it needs two winds a day)
+#          --secret  (Ada only!)

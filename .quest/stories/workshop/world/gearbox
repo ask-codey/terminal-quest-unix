@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+exec bash "${QUEST_HOME:?Play this inside a quest: ./quest start workshop}/.quest/lib/object.sh" 'workshop' 'gearbox' "$@"
+# The gearbox. Needs GEAR_SIZE (load the settings first).

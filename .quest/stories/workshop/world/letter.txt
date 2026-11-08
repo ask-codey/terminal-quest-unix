@@ -1,0 +1,28 @@
+To my new apprentice,
+
+I'm away at the inventors' fair. The machines here are
+programs: files that DO something when you run them, like
+./kettle-bot. Before the bell can ring at noon, they all need
+to work. They won't yet:
+
+  1. The kettle-bot won't run at all: a program needs
+     permission. ls -l shows it: an x means "may run".
+     chmod +x gives that permission.
+  2. Once it runs, it wants POWER. Machines read settings from
+     environment variables. Set one with POWER=on, and share
+     it with programs with export.
+  3. The oil can lives in tools/. Add that folder to your PATH
+     (the list of places the shell looks for programs) so you
+     can type just: oil gears
+  4. Winding the clock takes ./clock --wind --twice every time.
+     Give it a short name, tick, with alias.
+  5. The gearbox needs its settings loaded into YOUR shell:
+     source settings. (Just running ./settings starts a
+     separate shell that forgets everything when it ends.)
+  6. Run the gearbox, and only if it works, ring the bell:
+     ./gearbox && ./bell
+
+Read a machine before you run it: cat kettle-bot. Programs
+often do more than you'd think.
+
+- Ada

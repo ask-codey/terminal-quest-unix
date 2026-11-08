@@ -1,0 +1,22 @@
+# The Archive's walkthrough: every treasure, the coin and the finish. The tests play it. Generated: don't edit.
+QS_WALKTHROUGH=(
+'cat notice.txt'
+'grep "map-room" logs/*'
+'grep 7714 staff.txt'
+'echo "Otto Brandt" > case-notes.txt'
+'grep -r 7714 logs | wc -l >> case-notes.txt'
+'sort catalog.txt | uniq -d'
+'cat stacks/shelf-9/the-book-of-echoes.txt'
+'find . -name "*bookmark*"'
+'cat stacks/shelf-3/atlas-of-rivers/chapter-12/gold-bookmark.txt'
+'grep -ri "dear archivist" stacks'
+'cat stacks/shelf-6/old-letters.txt'
+'wc -l logs/* | sort -n | tail -3'
+'tail -n 1 logs/2026-10-31.log'
+'ls -a reading-room'
+'cat reading-room/.coat-rack/silver-coin.txt'
+'find lockers -name "*otto*"'
+'cd lockers/basement/row-c/otto-brandt'
+'ls -a'
+'cat .false-bottom/star-map.txt'
+)

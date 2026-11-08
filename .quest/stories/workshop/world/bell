@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+exec bash "${QUEST_HOME:?Play this inside a quest: ./quest start workshop}/.quest/lib/object.sh" 'workshop' 'bell' "$@"
+# The clock tower bell. Rings once.
+# Ring it --three-times for luck.

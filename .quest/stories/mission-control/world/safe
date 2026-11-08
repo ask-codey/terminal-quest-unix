@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+exec bash "${QUEST_HOME:?Play this inside a quest: ./quest start mission-control}/.quest/lib/object.sh" 'mission-control' 'safe' "$@"
+# The safe. Usage: ./safe CODE

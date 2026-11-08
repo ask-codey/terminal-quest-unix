@@ -1,0 +1,33 @@
+NOTICE FROM THE ARCHIVIST
+
+The Star Map, our oldest and most precious map, has gone
+missing from the map room. I need a detective.
+
+What we have:
+  logs/       the door log for every night in October, one
+              file a night. Hundreds of lines: don't read
+              them all, search them.
+  staff.txt   who carries which badge number.
+  lockers/    every staff locker, somewhere in there.
+
+Please:
+  1. Search the logs for the map room. Something happened
+     there at night.
+  2. Find whose badge it was, and write their name into a
+     new file, case-notes.txt.
+  3. Count every line in the logs with their badge number,
+     and add that number to case-notes.txt.
+  4. Find their locker. I have a feeling about it.
+
+Useful:
+  grep "map-room" logs/*     every line that says map-room
+  grep -r 7714 logs          search every file in a folder
+  ... | wc -l                count the lines a command prints
+  find lockers -name "*x*"   find names with x in them
+  man grep                   the manual for any command
+
+While you're here: the catalog lists one book twice, I lost
+my gold bookmark in the stacks years ago, and somewhere in
+the stacks is a letter that starts "Dear Archivist".
+
+  - Dr. Imani Osei, Archivist

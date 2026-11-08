@@ -1,0 +1,21 @@
+# Moving Day's walkthrough: every treasure, the coin and the finish. The tests play it. Generated: don't edit.
+QS_WALKTHROUGH=(
+'cat welcome-home.txt'
+'head hallway/packing-list.txt'
+'tail -n 1 hallway/packing-list.txt'
+'mkdir -p balcony/garden'
+'mkdir living-room/bookshelf'
+'mv hallway/box-books/*.book living-room/bookshelf/'
+'cat living-room/bookshelf/space.book'
+'mv hallway/box-kitchen/* kitchen/'
+'ls -a kitchen'
+'cat kitchen/.under-the-sink/coin.txt'
+'cp hallway/spare-key.txt mailbox/'
+'rm hallway/broken-vase.txt hallway/bubble-wrap.txt'
+'rmdir hallway/box-books hallway/box-kitchen'
+'mv hallway/box-bedroom/photo-album.txt bedroom/'
+'ls -a hallway/box-bedroom/socks'
+'cat hallway/box-bedroom/socks/.inside-the-blue-sock/ring.txt'
+'echo "Welcome to my place" > door-sign.txt'
+'echo "- water the plants" >> todo.txt'
+)

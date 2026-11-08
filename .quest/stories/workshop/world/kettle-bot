@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+exec bash "${QUEST_HOME:?Play this inside a quest: ./quest start workshop}/.quest/lib/object.sh" 'workshop' 'kettle-bot' "$@"
+# KETTLE-BOT 3000, by Ada Wren
+# Needs the POWER environment variable set to "on".
+# (Spare part: one golden cog, in drawer-3, in the velvet bag.)
+if [ "$POWER" != "on" ]; then echo "NO POWER"; exit 1; fi
+echo "Pouring tea..."

@@ -1,0 +1,31 @@
+FLIGHT DIRECTOR'S BRIEFING: KESTREL-1 LAUNCH
+
+Before ./launch will go, I need these done:
+
+  1. STOP THE ALARM. It's a runaway program. ps lists what's
+     running, with each program's PID; kill PID stops it.
+
+  2. RENAME THE TELEMETRY. Every telemetry/*.tmp file must end
+     in .log instead. Thirty of them: use a loop, not thirty
+     commands.  for f in telemetry/*.tmp; do ...; done
+     ("${f%.tmp}" is $f with .tmp cut off the end.)
+
+  3. CHECK THE SENSORS. Write a script, check.sh, that prints
+     the name of every sensor in sensors/ hotter than 90 (each
+     file says temp=NN). Make it runnable, then send its output
+     to the uplink:  ./check.sh | ./uplink
+     Write it with:  nano check.sh
+
+  4. SEND THE BEACON. Write a script, beacon.sh, that takes a
+     callsign as its first argument ($1) and prints
+     BEACON <callsign>. Then:  ./beacon.sh KESTREL | ./transmitter
+
+  5. LAUNCH:  ./launch
+
+Spares: our mission patch is in one of the crates (find it,
+there are a lot of patches in there), the photo viewer only
+shows a file called "wallpaper" (a link to a photo will do),
+and the safe code came in this morning, buried in
+message.txt.
+
+  - Director Tamsin Hale
