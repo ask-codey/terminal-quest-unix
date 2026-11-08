@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# Terminal Quest: text adventures you play with real terminal commands. https://www.ask-codey.com/games/terminal-quest
+#
+#   ./quest list                 the adventures, and how far you've got in each
+#   ./quest start <adventure>    play one (lighthouse, or 1): a fresh copy the first time, where you left off after
+#   ./quest reset <adventure>    start it again from scratch (--all: every adventure); your history stays
+#   ./quest history              every game you've played: starts, treasures, hints, finishes and resets
+#
+# While you play:
+#   quest hint                   a nudge for the next goal; again for more; a third time shows the command
+#   quest status                 your goal, treasures and coin
+#   exit                         leave the adventure (quest start brings you back)
+#
+# Copyright (c) 2026 FullStack Devs. See LICENSE.
+QUEST_HOME=$(cd "$(dirname "$0")" && pwd)
+export QUEST_HOME
+# shellcheck disable=SC1091
+. "$QUEST_HOME/.quest/lib/quest-lib.sh"
+# shellcheck disable=SC1091
+. "$QUEST_HOME/.quest/stories/adventures.sh"
+
+usage() {
+  sed -n '2,15p' "$QUEST_HOME/quest" | sed 's/^# \{0,1\}//'
+}
+
+# q_resolve <name>: an adventure's folder from its folder, id (01-lighthouse) or number (1).
+q_resolve() {
+  local want i=0 f id
+  want=$(q_lower "$1")
+  for f in $QS_ALL; do
+    i=$((i + 1))
+    id=$(sed -n "s/^QS_ID='\(.*\)'\$/\1/p" "$QUEST_HOME/.quest/stories/$f/story.sh")
+    if [ "$want" = "$f" ] || [ "$want" = "$id" ] || [ "$want" = "$i" ] || [ "$want" = "0$i" ]; then
+      printf '%s\n' "$f"
+      return 0
+    fi
+  done
+  printf 'There is no adventure called "%s". These are the adventures:\n\n' "$1" >&2
+  cmd_list >&2
+  return 1
+}
+
+level_name() {
+  case "$1" in
+    novice) echo Novice ;; apprentice) echo Apprentice ;; journeyman) echo Journeyman ;;
+    freelancer) echo Freelancer ;; master) echo Master ;; *) echo "$1" ;;
+  esac
+}
+
+count_lines() {
+  if [ -f "$1" ]; then wc -l < "$1" | tr -d ' '; else echo 0; fi
+}
+
+cmd_list() {
+  local f i=0 state total found
+  for f in $QS_ALL; do
+    i=$((i + 1))
+    q_load "$f" || continue
+    total=$(echo $QS_TREASURES | wc -w | tr -d ' ')
+    found=$(count_lines "$QS_STATE/found")
+    if [ ! -d "$QS_ROOT" ]; then state='not started'
+    elif [ -f "$QS_STATE/finished" ]; then state="finished · $found of $total treasures"
+    else state="in progress · $found of $total treasures"
+    fi
+    [ -f "$QS_STATE/coin" ] && state="$state · the rare coin"
+    printf '  %s  %-16s %-24s %-11s %s\n' "$i" "$f" "$QS_TITLE" "$(level_name "$QS_LEVEL")" "$state"
+  done
+  printf '\nPlay one:  ./quest start lighthouse\n'
+}
+
+# A fresh copy of an adventure: its folder, its permissions, a new run in the history.
+lay_out() {
+  local runs
+  q_load "$1" || return 1
+  q_pause_processes
+  rm -rf "${QS_ROOT:?}" "${QS_STATE:?}"
+  mkdir -p "$QS_ROOT" "$QS_STATE"
+  cp -R "$QS_DIR/world/." "$QS_ROOT/"
+  find "$QS_ROOT" -type f -exec chmod 644 {} +
+  find "$QS_ROOT" -type d -exec chmod 755 {} +
+  q_load "$1"
+  qs_layout
+  runs=0
+  [ -f "$QUEST_HOME/game-history.csv" ] && runs=$(awk -F, -v a="$1" '$2 == a && $5 == "start"' "$QUEST_HOME/game-history.csv" | wc -l | tr -d ' ')
+  printf '%s\n' "$((runs + 1))" > "$QS_STATE/run"
+  if [ -n "$QS_START" ]; then printf '%s\n' "$QS_ROOT/$QS_START" > "$QS_STATE/lastcwd"; else printf '%s\n' "$QS_ROOT" > "$QS_STATE/lastcwd"; fi
+  qs_processes
+  q_history start "$QS_TITLE"
+}
+
+which_shell() {
+  case "$1" in
+    --bash) echo bash; return ;;
+    --zsh) echo zsh; return ;;
+  esac
+  if [ "$(basename "${SHELL:-bash}")" = zsh ] && command -v zsh > /dev/null 2>&1; then echo zsh; else echo bash; fi
+}
+
+cmd_start() {
+  local f new=0 sh goal where
+  [ -n "${1:-}" ] || { printf 'Which adventure? For example:  ./quest start lighthouse\n\n' >&2; cmd_list >&2; return 1; }
+  if [ -n "${QUEST_ADVENTURE:-}" ]; then
+    printf "You're in %s already. Type exit to leave it, then start another.\n" "$QUEST_ADVENTURE" >&2
+    return 1
+  fi
+  f=$(q_resolve "$1") || return 1
+  sh=$(which_shell "${2:-}")
+  q_load "$f" || return 1
+  if [ ! -d "$QS_ROOT" ] || [ ! -f "$QS_STATE/run" ]; then lay_out "$f" || return 1; new=1; fi
+  export QUEST_ADVENTURE="$f" QUEST_SHELL="$sh"
+  if [ $new = 1 ]; then
+    printf '%s' "$Q_DIM"; qs_art; printf '%s\n' "$Q_OFF"
+    qs_intro
+  else
+    printf '%sBack in %s.%s\n' "$Q_GOLD" "$QS_TITLE" "$Q_OFF"
+    if goal=$(q_current_goal); then printf 'Your goal: %s\n' "$(qs_goal_title "$goal")"; fi
+  fi
+  printf '\n%squest hint: a nudge · quest status: how you are doing · exit: leave (quest start brings you back)%s\n\n' "$Q_DIM" "$Q_OFF"
+  q_resume_processes
+  where=$(cat "$QS_STATE/lastcwd" 2>/dev/null)
+  [ -d "$where" ] || where="$QS_ROOT"
+  cd "$where" || return 1
+  [ -n "${QUEST_NO_SHELL:-}" ] && return 0
+  QUEST_BASH=$(command -v bash)
+  export QUEST_BASH
+  if [ "$sh" = zsh ]; then
+    ZDOTDIR="$QUEST_HOME/.quest/lib/zsh" HOME="$QUEST_HOME" exec zsh -i
+  else
+    HOME="$QUEST_HOME" exec bash --rcfile "$QUEST_HOME/.quest/lib/session.bash" -i
+  fi
+}
+
+cmd_reset() {
+  local f list=''
+  [ -n "${1:-}" ] || { printf 'Which adventure? For example:  ./quest reset lighthouse   (or --all)\n' >&2; return 1; }
+  if [ "$1" = --all ]; then
+    for f in $QS_ALL; do [ -d "$QUEST_HOME/$f" ] && list="$list $f"; done
+  else
+    list=$(q_resolve "$1") || return 1
+  fi
+  for f in $list; do
+    if [ "${QUEST_ADVENTURE:-}" = "$f" ]; then
+      printf "You're playing %s right now. Type exit to leave it, then reset it.\n" "$f" >&2
+      return 1
+    fi
+  done
+  for f in $list; do
+    q_load "$f" || continue
+    [ -d "$QS_ROOT" ] && q_history reset "$QS_TITLE"
+    lay_out "$f"
+    printf 'A fresh copy of %s is ready:  ./quest start %s\n' "$QS_TITLE" "$f"
+  done
+}
+
+cmd_hint() {
+  local f="${QUEST_ADVENTURE:-${1:-}}" goal level=1 last
+  [ -n "$f" ] || { printf 'Hints are for while you play: ./quest start <adventure>, then quest hint.\n' >&2; return 1; }
+  q_load "$f" || return 1
+  if ! goal=$(q_current_goal); then
+    printf 'Every goal is done. Look around for treasures you missed: quest status shows them.\n'
+    return 0
+  fi
+  last=$(cat "$QS_STATE/hint" 2>/dev/null)
+  if [ "${last% *}" = "$goal" ]; then level=$(( ${last#* } + 1 )); fi
+  [ $level -gt 3 ] && level=3
+  printf '%s %s\n' "$goal" "$level" > "$QS_STATE/hint"
+  printf '%sGoal: %s%s\n' "$Q_GOLD" "$(qs_goal_title "$goal")" "$Q_OFF"
+  if [ $level -lt 3 ]; then
+    qs_goal_hint "$goal" "$level"
+    printf '%s(quest hint again for more)%s\n' "$Q_DIM" "$Q_OFF"
+  else
+    qs_goal_teach "$goal"
+    printf 'Type:\n'
+    qs_goal_solution "$goal" | sed 's/^/  /'
+    q_add shown "$goal"
+  fi
+  q_history hint "$goal (step $level of 3)"
+}
+
+cmd_status() {
+  local f="${QUEST_ADVENTURE:-${1:-}}" goal t n=0 total i=0 g
+  if [ -z "$f" ]; then cmd_list; return; fi
+  f=$(q_resolve "$f") || return 1
+  q_load "$f" || return 1
+  [ -d "$QS_ROOT" ] || { printf "%s isn't started yet:  ./quest start %s\n" "$QS_TITLE" "$f"; return 0; }
+  printf '%s%s%s · Level: %s\n' "$Q_GOLD" "$QS_TITLE" "$Q_OFF" "$(level_name "$QS_LEVEL")"
+  total=$(echo $QS_GOALS | wc -w | tr -d ' ')
+  if [ -f "$QS_STATE/finished" ]; then
+    printf 'Quest complete.\n'
+  elif goal=$(q_current_goal); then
+    for g in $QS_GOALS; do i=$((i + 1)); [ "$g" = "$goal" ] && n=$i; done
+    printf 'Goal %s of %s: %s\n' "$n" "$total" "$(qs_goal_title "$goal")"
+  fi
+  printf '\nTreasures:\n'
+  for t in $QS_TREASURES; do
+    if q_treasure "$t"; then printf '  ★ %s\n' "$(qs_treasure_name "$t")"; else printf '  ☆ not found yet\n'; fi
+  done
+  if [ "$QS_COIN" = 1 ]; then
+    if [ -f "$QS_STATE/coin" ]; then printf '  ◆ the rare coin\n'; else printf '  ◇ a rare coin is hidden somewhere\n'; fi
+  fi
+}
+
+cmd_history() {
+  local file="$QUEST_HOME/game-history.csv" f
+  [ -f "$file" ] || { printf 'No games yet. Start one:  ./quest start lighthouse\n'; return 0; }
+  if [ -n "${1:-}" ]; then
+    f=$(q_resolve "$1") || return 1
+    awk -F, -v a="$f" 'NR == 1 || $2 == a' "$file" > "$file.view"
+  else
+    cp "$file" "$file.view"
+  fi
+  if command -v column > /dev/null 2>&1; then sed 's/"//g' "$file.view" | column -t -s,; else cat "$file.view"; fi
+  rm -f "$file.view"
+}
+
+case "${1:-}" in
+  list) cmd_list ;;
+  start) shift; cmd_start "$@" ;;
+  reset) shift; cmd_reset "$@" ;;
+  hint) shift; cmd_hint "$@" ;;
+  status) shift; cmd_status "$@" ;;
+  history) shift; cmd_history "$@" ;;
+  __leave) [ -n "${QUEST_ADVENTURE:-}" ] && q_load "$QUEST_ADVENTURE" && q_pause_processes ;;
+  ''|help|-h|--help) usage ;;
+  *) printf 'quest: there is no "%s". ' "$1" >&2; usage >&2; exit 2 ;;
+esac

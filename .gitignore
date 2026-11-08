@@ -1,0 +1,8 @@
+# What you play is yours, not the repo's: every adventure's folder (made by ./quest start), what has happened
+# in it, and your game history.
+/*/
+!/.quest/
+!/tests/
+!/.github/
+/.quest/state/
+/game-history.csv
