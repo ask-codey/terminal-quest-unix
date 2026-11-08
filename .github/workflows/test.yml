@@ -1,0 +1,24 @@
+# Every adventure played start to finish, reset, and the quest command, in a real bash: on Linux, and on macOS with
+# the bash 3.2 macOS ships (so the repo works on a Mac as it comes).
+name: Tests
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats
+        run: git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats"
+      - name: Use the bash macOS ships
+        if: runner.os == 'macOS'
+        run: echo /bin >> "$GITHUB_PATH"
+      - name: Which bash
+        run: bash --version | head -1
+      - name: Test
+        run: bash "$RUNNER_TEMP/bats/bin/bats" tests
